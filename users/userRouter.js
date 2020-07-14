@@ -108,8 +108,28 @@ router.delete('/:id', async (req, res) => {
   }
 })
 
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   // do your magic!
+
+  try {
+    const user = await userDB.getById(req.params.id)
+    if (user) {
+      if (req.body.name) {
+        const edit = await userDB.update(req.params.id, req.body)
+        if (edit) {
+          res.status(201).json({ data: edit })
+        } else {
+          res.status(400).json({ message: 'User could not be edited' })
+        }
+      } else {
+        res.status(400).json({ message: 'Please provide valid input' })
+      }
+    } else {
+      res.status(404).json({ message: 'User not found' })
+    }
+  } catch (error) {
+    res.status(500).json({ errorMessage: 'Something went wrong' })
+  }
 })
 
 //custom middleware
