@@ -1,6 +1,7 @@
 const express = require('express')
 
 const userDB = require('./userDb')
+const postDB = require('../posts/postDb')
 const { getById } = require('./userDb')
 
 const router = express.Router()
@@ -23,8 +24,16 @@ router.post('/', async (req, res) => {
   }
 })
 
-router.post('/:id/posts', (req, res) => {
+router.post('/:id/posts', async (req, res) => {
   // do your magic!
+  try {
+    const user = await userDB.getById(req.params.id)
+    if (user) {
+      // const post = await postDB.insert()
+    }
+  } catch (error) {
+
+  }
 })
 
 router.get('/', async (req, res) => {
@@ -56,8 +65,21 @@ router.get('/:id', async (req, res) => {
   }
 })
 
-router.get('/:id/posts', (req, res) => {
+router.get('/:id/posts', async (req, res) => {
   // do your magic!
+  try {
+    const user = await userDB.getById(req.params.id)
+    if (user) {
+      const posts = await postDB.getById(req.params.id)
+      if (posts) {
+        res.status(200).json({ data: posts })
+      } else {
+        res.status(404).json({ message: 'Could not find posts by that user' })
+      }
+    }
+  } catch (error) {
+    res.status(500).json({ errorMessage: 'Something went wrong' })
+  }
 })
 
 router.delete('/:id', (req, res) => {
