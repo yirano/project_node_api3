@@ -6,7 +6,7 @@ const { getById } = require('./userDb')
 
 const router = express.Router()
 
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
   // do your magic!
   try {
     if (req.body.name) {
@@ -20,11 +20,11 @@ router.post('/', async (req, res) => {
       res.status(400).json({ message: 'Please make sure your input is valid' })
     }
   } catch (error) {
-    res.status(500).json({ errorMessage: 'Something went wrong' })
+    next(error)
   }
 })
 
-router.post('/:id/posts', async (req, res) => {
+router.post('/:id/posts', async (req, res, next) => {
   // do your magic!
   try {
     const user = await userDB.getById(req.params.id)
@@ -43,12 +43,11 @@ router.post('/:id/posts', async (req, res) => {
       res.status(404).json({ message: 'Could not post for the user' })
     }
   } catch (error) {
-    console.log(error)
-    res.status(500).json({ errorMessage: 'Something went wrong' })
+    next(error)
   }
 })
 
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   // do your magic!
   try {
     const users = await userDB.get()
@@ -57,13 +56,13 @@ router.get('/', async (req, res) => {
     } else {
       res.status(404).json({ message: 'Could not retrieve users' })
     }
-  } catch {
-    res.status(500).json({ errorMessage: 'Something went wrong.' })
+  } catch (error) {
+    next(error)
   }
 
 })
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
   // do your magic!
   try {
     const user = await userDB.getById(req.params.id)
@@ -72,12 +71,12 @@ router.get('/:id', async (req, res) => {
     } else {
       res.status(404).json({ message: 'User by that ID could not be found' })
     }
-  } catch {
-    res.status(500).json({ errorMessage: 'Something went wrong.' })
+  } catch (error) {
+    next(error)
   }
 })
 
-router.get('/:id/posts', async (req, res) => {
+router.get('/:id/posts', async (req, res, next) => {
   // do your magic!
   try {
     const user = await userDB.getById(req.params.id)
@@ -90,11 +89,11 @@ router.get('/:id/posts', async (req, res) => {
       }
     }
   } catch (error) {
-    res.status(500).json({ errorMessage: 'Something went wrong' })
+    next(error)
   }
 })
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
   // do your magic!
   try {
     const user = await userDB.remove(req.params.id)
@@ -104,11 +103,11 @@ router.delete('/:id', async (req, res) => {
       res.status(400).json({ message: 'User could not be deleted' })
     }
   } catch (error) {
-    res.status(500).json({ errorMessage: 'Something went wrong' })
+    next(error)
   }
 })
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req, res, next) => {
   // do your magic!
 
   try {
@@ -128,7 +127,7 @@ router.put('/:id', async (req, res) => {
       res.status(404).json({ message: 'User not found' })
     }
   } catch (error) {
-    res.status(500).json({ errorMessage: 'Something went wrong' })
+    next(error)
   }
 })
 
