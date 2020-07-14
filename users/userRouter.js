@@ -29,10 +29,22 @@ router.post('/:id/posts', async (req, res) => {
   try {
     const user = await userDB.getById(req.params.id)
     if (user) {
-      // const post = await postDB.insert()
+      if (req.body.text) {
+        const post = await postDB.insert(req.body)
+        if (post) {
+          res.status(201).json({ data: post })
+        } else {
+          res.status(403).json({ message: 'Could not create post' })
+        }
+      } else {
+        res.status(400).json({ message: 'Please provide valid input' })
+      }
+    } else {
+      res.status(404).json({ message: 'Could not post for the user' })
     }
   } catch (error) {
-
+    console.log(error)
+    res.status(500).json({ errorMessage: 'Something went wrong' })
   }
 })
 
@@ -70,7 +82,7 @@ router.get('/:id/posts', async (req, res) => {
   try {
     const user = await userDB.getById(req.params.id)
     if (user) {
-      const posts = await postDB.getById(req.params.id)
+      const posts = await userDB.getUserPosts(req.params.id)
       if (posts) {
         res.status(200).json({ data: posts })
       } else {
