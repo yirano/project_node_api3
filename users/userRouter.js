@@ -6,44 +6,31 @@ const { getById } = require('./userDb')
 
 const router = express.Router()
 
-router.post('/', async (req, res, next) => {
-  // do your magic!
+router.post('/', validateUser(), async (req, res, next) => {
   try {
-    if (req.body.name) {
-      const postUser = await userDB.insert(req.body)
-      if (postUser) {
-        res.status(201).json({ data: postUser })
-      } else {
-        res.status(400).json({ message: 'User could not be created.' })
-      }
+    const postUser = await userDB.insert(req.body)
+    if (postUser) {
+      res.status(201).json({ data: postUser })
     } else {
-      res.status(400).json({ message: 'Please make sure your input is valid' })
+      res.status(400).json({ message: 'User could not be created.' })
     }
   } catch (error) {
     next(error)
   }
 })
 
-router.post('/:id/posts', async (req, res, next) => {
+router.post('/:id/posts', validateUserId(), validatePost(), async (req, res) => {
   // do your magic!
   try {
-    const user = await userDB.getById(req.params.id)
-    if (user) {
-      if (req.body.text) {
-        const post = await postDB.insert(req.body)
-        if (post) {
-          res.status(201).json({ data: post })
-        } else {
-          res.status(403).json({ message: 'Could not create post' })
-        }
-      } else {
-        res.status(400).json({ message: 'Please provide valid input' })
-      }
-    } else {
-      res.status(404).json({ message: 'Could not post for the user' })
-    }
+    console.log('req.body', req.body)
+    const newPost = await postDB.insert(req.body)
+    res.status(201).json({ data: newPost })
   } catch (error) {
-    next(error)
+    // next(error)
+    console.log(error)
+    res.status(500).json({
+      message: 'could not do it'
+    })
   }
 })
 
@@ -59,45 +46,30 @@ router.get('/', async (req, res, next) => {
   } catch (error) {
     next(error)
   }
-
 })
 
-router.get('/:id', async (req, res, next) => {
-  // do your magic!
-  try {
-    const user = await userDB.getById(req.params.id)
-    if (user) {
-      res.status(200).json({ data: user })
-    } else {
-      res.status(404).json({ message: 'User by that ID could not be found' })
-    }
-  } catch (error) {
-    next(error)
+router.get('/:id', validateUserId(), async (req, res, next) => {
+  if (req.user) {
+    res.status(200).json({ data: req.user })
+  } else {
+    res.status(404).json({ message: 'User by that ID could not be found' })
   }
 })
 
-router.get('/:id/posts', async (req, res, next) => {
-  // do your magic!
-  try {
-    const user = await userDB.getById(req.params.id)
-    if (user) {
-      const posts = await userDB.getUserPosts(req.params.id)
-      if (posts) {
-        res.status(200).json({ data: posts })
-      } else {
-        res.status(404).json({ message: 'Could not find posts by that user' })
-      }
-    }
-  } catch (error) {
-    next(error)
+router.get('/:id/posts', validateUserId(), async (req, res, next) => {
+  const posts = await userDB.getUserPosts(req.params.id)
+  if (posts) {
+    res.status(200).json({ data: posts })
+  } else {
+    res.status(404).json({ message: 'Could not find posts by that user' })
   }
 })
 
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', validateUserId(), async (req, res, next) => {
   // do your magic!
   try {
-    const user = await userDB.remove(req.params.id)
-    if (user) {
+    const deleted = await userDB.remove(req.params.id)
+    if (deleted) {
       res.status(200).json({ data: user })
     } else {
       res.status(400).json({ message: 'User could not be deleted' })
@@ -107,42 +79,64 @@ router.delete('/:id', async (req, res, next) => {
   }
 })
 
-router.put('/:id', async (req, res, next) => {
-  // do your magic!
-
+router.put('/:id', validateUserId(), validateUser(), async (req, res, next) => {
+  const { id } = req.params
   try {
-    const user = await userDB.getById(req.params.id)
-    if (user) {
-      if (req.body.name) {
-        const edit = await userDB.update(req.params.id, req.body)
-        if (edit) {
-          res.status(201).json({ data: edit })
-        } else {
-          res.status(400).json({ message: 'User could not be edited' })
-        }
-      } else {
-        res.status(400).json({ message: 'Please provide valid input' })
-      }
-    } else {
-      res.status(404).json({ message: 'User not found' })
-    }
+    const updatedUser = await userDB.update(id, req.body)
+    res.status(201).json({ data: updatedUser })
   } catch (error) {
     next(error)
   }
+
 })
 
 //custom middleware
 
-function validateUserId(req, res, next) {
+function validateUserId() {
   // do your magic!
+  return (req, res, next) => {
+    userDB.getById(req.params.id)
+      .then(user => {
+        req.user = user
+        next()
+      })
+      .catch(err => {
+        console.log(err)
+        // next(err)
+        res.status(500).json({ message: "HEYOOO" })
+      })
+  }
 }
 
-function validateUser(req, res, next) {
+function validateUser() {
   // do your magic!
+  return (req, res, next) => {
+    if (req.body.name) {
+      req.body = req.body
+      next()
+    } else {
+      res.status(400).json({ message: 'Please make sure your input is valid' })
+    }
+  }
 }
 
-function validatePost(req, res, next) {
+function validatePost() {
   // do your magic!
+  return (req, res, next) => {
+    try {
+      if (req.body.text && req.body.user_id) {
+        req.body = req.body
+        next()
+      } else if (!req.body.user_id) {
+        res.status(400).json({ error: "Missing required user_id field" })
+      } else {
+        res.status(400).json({ message: 'Please make sure your input is valid' })
+      }
+    } catch (error) {
+      next(error)
+    }
+  }
+
 }
 
 module.exports = router
