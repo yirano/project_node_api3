@@ -1,9 +1,9 @@
-const express = require('express')
+const router = require('express').Router()
 const postsDB = require('../posts/postDb')
-const router = express.Router()
+const postDb = require('../posts/postDb')
+// const router = express.Router()
 
 router.get('/', async (req, res, next) => {
-  // do your magic!
   try {
     const posts = await postsDB.get()
     if (posts) {
@@ -16,58 +16,46 @@ router.get('/', async (req, res, next) => {
   }
 })
 
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', validatePostId(), (req, res, next) => {
+  res.status(200).json({ data: req.post })
+})
+
+router.delete('/:id', validatePostId(), async (req, res, next) => {
   // do your magic!
-  try {
-    const post = await postsDB.getById(req.params.id)
-    if (post) {
-      res.status(200).json({ data: post })
-    } else {
-      res.status(404).json({ message: 'Post could not be found' })
-    }
-  } catch (error) {
-    next(error)
+  const deletePost = await postsDB.remove(req.params.id)
+  if (deletePost) {
+    res.status(200).json({ data: deletePost })
+  } else {
+    res.status(400).json({ message: 'Post could not be deleted' })
   }
 })
 
-router.delete('/:id', async (req, res, next) => {
-  // do your magic!
-  try {
-    const deletePost = await postsDB.remove(req.params.id)
-    if (deletePost) {
-      res.status(200).json({ data: deletePost })
-    } else {
-      res.status(400).json({ message: 'Post could not be deleted' })
-    }
-  } catch (error) {
-    next(error)
-  }
-
-})
-
-router.put('/:id', async (req, res, next) => {
-  // do your magic!
-  try {
-    if (req.body.text) {
-      const post = await postsDB.getById(req.params.id)
-      if (post) {
-        const editPost = await postsDB.update(req.params.id, req.body)
-        res.status(201).json({ data: editPost })
-      } else {
-        res.status(404).json({ message: 'That post could not be found' })
-      }
-    } else {
-      res.status(400).json({ message: 'Please provide valid input' })
-    }
-  } catch (error) {
-    next(error)
+router.put('/:id', validatePostId(), async (req, res, next) => {
+  if (req.body.text) {
+    const editPost = await postsDB.update(req.params.id, req.body)
+    res.status(201).json({ data: editPost })
+  } else {
+    res.status(400).json({ message: 'Please provide a valid input' })
   }
 })
 
 // custom middleware
-
-function validatePostId(req, res, next) {
-  // do your magic!
+function validatePostId() {
+  return (req, res, next) => {
+    postDb.getById(req.params.id)
+      .then(post => {
+        if (post) {
+          req.post = post
+          next()
+        } else {
+          res.status(404).json({
+            message: 'Post by the ID not found'
+          })
+        }
+      })
+      .catch(next)
+  }
 }
+
 
 module.exports = router
