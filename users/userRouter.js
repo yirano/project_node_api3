@@ -20,13 +20,10 @@ router.post('/', validateUser(), async (req, res, next) => {
 })
 
 router.post('/:id/posts', validateUserId(), validatePost(), async (req, res) => {
-  // do your magic!
   try {
-    console.log('req.body', req.body)
     const newPost = await postDB.insert(req.body)
     res.status(201).json({ data: newPost })
   } catch (error) {
-    // next(error)
     console.log(error)
     res.status(500).json({
       message: 'could not do it'
@@ -87,7 +84,6 @@ router.put('/:id', validateUserId(), validateUser(), async (req, res, next) => {
   } catch (error) {
     next(error)
   }
-
 })
 
 //custom middleware
@@ -130,7 +126,7 @@ function validatePost() {
       } else if (!req.body.user_id) {
         res.status(400).json({ error: "Missing required user_id field" })
       } else {
-        res.status(400).json({ message: 'Please make sure your input is valid' })
+        res.status(400).json({ message: "Missing required name field" })
       }
     } catch (error) {
       next(error)
